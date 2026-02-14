@@ -77,13 +77,6 @@ class DatabaseManager:
             cur = conn.cursor()
             cur.execute('SELECT * FROM users')
             return [x[0] for x in cur.fetchall()] 
-        
-    def get_prize_img(self, prize_id):
-        conn = sqlite3.connect(self.database)
-        with conn:
-            cur = conn.cursor()
-            cur.execute('SELECT image FROM prizes WHERE prize_id = ?', (prize_id, ))
-            return cur.fetchall()[0][0]
             
     def get_random_prize(self):
         conn = sqlite3.connect(self.database)
@@ -92,28 +85,45 @@ class DatabaseManager:
             cur.execute('SELECT * FROM prizes WHERE used = 0 ORDER BY RANDOM()')
             return cur.fetchall()[0]
         
+    def get_prize_img(self, prize_id):
+        conn = sqlite3.connect(self.database)
+        with conn:
+            cur = conn.cursor()
+            cur.execute('SELECT image FROM prizes WHERE prize_id = ?', (prize_id, ))
+            return cur.fetchall()[0][0]
+        
     def get_winners_count(self, prize_id):
         conn = sqlite3.connect(self.database)
         with conn:
             cur = conn.cursor()
             cur.execute('SELECT COUNT(*) FROM winners WHERE prize_id = ?', (prize_id, ))
             return cur.fetchall()[0][0]
+    
+    def get_winners_img(self, user_id):
+        conn = sqlite3.connect(self.database)
+        with conn:
+            cur = conn.cursor()
+            cur.execute(''' 
+SELECT image FROM winners 
+INNER JOIN prizes ON 
+winners.prize_id = prizes.prize_id
+WHERE user_id = ?''', (user_id, ))
+            return cur.fetchall()
         
     def get_rating(self):
         conn = sqlite3.connect(self.database)
         with conn:
             cur = conn.cursor()
             cur.execute('''
-                SELECT users.user_name, COUNT(winners.prize_id) as count_prize FROM winners
-                INNER JOIN users on users.user_id = winners.user_id
-                GROUP BY winners.user_id
-                ORDER BY count_prize
-                LIMIT 10
-            ''')
+SELECT users.user_name, COUNT(winners.prize_id) as count_prize FROM winners
+INNER JOIN users on users.user_id = winners.user_id
+GROUP BY winners.user_id
+ORDER BY count_prize
+LIMIT 10''')
             return cur.fetchall()
-    
-    
-  
+        
+
+
 def hide_img(img_name):
     image = cv2.imread(f'img/{img_name}')
     blurred_image = cv2.GaussianBlur(image, (15, 15), 0)

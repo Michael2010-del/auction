@@ -1,3 +1,4 @@
+
 from telebot import TeleBot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from logic import *
@@ -14,11 +15,12 @@ def gen_markup(id):
     markup.add(InlineKeyboardButton("Получить!", callback_data=id))
     return markup
 
-
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
+
     prize_id = call.data
     user_id = call.message.chat.id
+
     if manager.get_winners_count(prize_id) < 3:
         res = manager.add_winner(user_id, prize_id)
         if res:
@@ -30,6 +32,7 @@ def callback_query(call):
     else:
         bot.send_message(user_id, "К сожалению, ты не успел получить картинку! Попробуй в следующий раз!)")
 
+
 def send_message():
     prize_id, img = manager.get_random_prize()[:2]
     manager.mark_prize_used(prize_id)
@@ -38,9 +41,8 @@ def send_message():
         with open(f'hidden_img/{img}', 'rb') as photo:
             bot.send_photo(user, photo, reply_markup=gen_markup(id = prize_id))
         
-
 def shedule_thread():
-    schedule.every().minute.do(send_message) # Здесь ты можешь задать периодичность отправки картинок
+    schedule.every().minute.do(send_message)
     while True:
         schedule.run_pending()
         time.sleep(1)
@@ -59,6 +61,7 @@ def handle_start(message):
 
 Только три первых пользователя получат картинку!)""")
         
+    
 @bot.message_handler(commands=['rating'])
 def handle_rating(message):
     res = manager.get_rating()
@@ -66,7 +69,6 @@ def handle_rating(message):
     res = '\n'.join(res)
     res = f'|USER_NAME    |COUNT_PRIZE|\n{"_"*26}\n' + res
     bot.send_message(message.chat.id, res)
-        
 
 
 def polling_thread():
