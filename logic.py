@@ -70,6 +70,22 @@ class DatabaseManager:
             conn.execute('''UPDATE prizes SET used = 1 WHERE prize_id = ?''', (prize_id,))
             conn.commit()
 
+    def reset_used_prizes(self):
+        """Сбрасывает все призы в «не использованы», чтобы рассылка шла по кругу."""
+        conn = sqlite3.connect(self.database)
+        with conn:
+            conn.execute('''UPDATE prizes SET used = 0''')
+            conn.commit()
+    def get_winners_img(self, user_id):
+        conn = sqlite3.connect(self.database)
+        with conn:
+            cur = conn.cursor()
+            cur.execute(''' 
+SELECT image FROM winners 
+INNER JOIN prizes ON 
+winners.prize_id = prizes.prize_id
+WHERE user_id = ?''', (user_id, ))
+            return cur.fetchall()
 
     def get_users(self):
         conn = sqlite3.connect(self.database)
@@ -83,7 +99,8 @@ class DatabaseManager:
         with conn:
             cur = conn.cursor()
             cur.execute('SELECT * FROM prizes WHERE used = 0 ORDER BY RANDOM()')
-            return cur.fetchall()[0]
+            rows = cur.fetchall()
+            return rows[0] if rows else None
         
     def get_prize_img(self, prize_id):
         conn = sqlite3.connect(self.database)
@@ -98,18 +115,9 @@ class DatabaseManager:
             cur = conn.cursor()
             cur.execute('SELECT COUNT(*) FROM winners WHERE prize_id = ?', (prize_id, ))
             return cur.fetchall()[0][0]
-    
-    def get_winners_img(self, user_id):
-        conn = sqlite3.connect(self.database)
-        with conn:
-            cur = conn.cursor()
-            cur.execute(''' 
-SELECT image FROM winners 
-INNER JOIN prizes ON 
-winners.prize_id = prizes.prize_id
-WHERE user_id = ?''', (user_id, ))
-            return cur.fetchall()
-        
+
+
+    # таблицу имя пользователя и количества призов
     def get_rating(self):
         conn = sqlite3.connect(self.database)
         with conn:
